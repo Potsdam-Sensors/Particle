@@ -105,7 +105,6 @@ void setup(){
   
   //Serial for plantower
   Serial1.begin(9600, SERIAL_8N1);
-  
   //Setup for humidity and temperature sensor
   int count2 = 0;
   while(!htu.begin() && count2 != 3){ //count for if htu not connected
@@ -274,7 +273,7 @@ void logData1(SdFile file, char fileName[]) {
   file.print(now.minute(), DEC);
   file.print(':');
   file.print(now.second(), DEC);
-  //logging tempa and humidity data
+  //logging temp and humidity data
   templ = (int)temp;
   tempr = (temp-templ)*100;//rounded to 2 places
   humdl = (int)humd;

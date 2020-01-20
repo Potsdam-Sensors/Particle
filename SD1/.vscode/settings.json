@@ -5,8 +5,7 @@
     "files.associations": {
         "*.ino": "cpp"
     },
-    "git.ignoreLimitWarning": true,
     "particle.targetDevice": "argon3",
-    "particle.firmwareVersion": "1.1.1",
+    "particle.firmwareVersion": "1.1.0",
     "particle.targetPlatform": "argon"
 }
