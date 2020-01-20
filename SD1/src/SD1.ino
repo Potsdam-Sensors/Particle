@@ -9,9 +9,15 @@
 
 //to be able to use without wifi basically the code will still run when wifi is down
 SYSTEM_THREAD(ENABLED);
-//wifi information
-char wifissid[] = "PotsdamSensors";//wifi ssid
-char wifipassword[] = "potsdam_sensors";//wifi password
+// 1. Set up your wifi: 
+//###########################
+char wifissid[] = "Buffalo-G-87A0";//wifi ssid
+char wifipassword[] = "52672125";//wifi password
+
+// 2. Set up your Device ID: 
+//###########################
+char dbname[20] = "Particle";
+char tablename[20] = "argon1";
 //Select sensor/device type
 int sensortype = 1;
 // char server[] = "18.220.67.192"; // Potsdam Sensor server
@@ -32,11 +38,9 @@ http_response_t response;
 int portnum = 80;
 char pathdata[1000];
 char jsondata[1000];
-//mysql information
-char username[20] = "labusers"; //cuairlab
-char password[20] = "labuserspass"; //cuairlab@camp292
-char dbname[20] = "Particle";
-char tablename[20] = "argon1";
+//mysql information (dbname and tablename above)
+char username[20] = "labusers";
+char password[20] = "labuserspass";
 //Shinyei variables
 int Shinyei = D3;
 unsigned long duration1;
@@ -52,7 +56,7 @@ const uint32_t SAMPLE_INTERVAL_MS = 1000;
 int header_done = 0;
 SdFat sd;
 SdFile sdfile1; 
-char sdfilename[20] = "ar18n.csv";//always use .csv
+char sdfilename[20] = "argon18.csv";//always use .csv
 //RTC
 DateTime now;
 RTC_DS3231 rtc;
@@ -88,48 +92,41 @@ void setup(){
   Serial.begin(115200);
   while(!Serial);
   delay(4000); 
-  Serial.println("hello");
-    
-  Serial.println("hello222");
+  Serial.println("Starting up...");
+
   //setting wifi
-  WiFi.setCredentials(wifissid, wifipassword, WPA2);//options are WPA2, WEP, WPA
+  WiFi.setCredentials(wifissid, wifipassword, WPA2);//options are WPA2 (default if not chosen), WEP, WPA
   
   //Serial for plantower
   Serial1.begin(9600, SERIAL_8N1);
-  
-  //Serial for debugging
 
-  
   //Setup for Shinyei
-  
   pinMode(Shinyei,INPUT);
   
   //Setup for humidity and temperature sensor
-  int count = 0;
-  while(!htu.begin() && count != 3){
+  int count2 = 0;
+  while(!htu.begin() && count2 != 3){ //count for if htu not connected
 	    delay(1000); 
-      count++;
+      count2++;
       Serial.println(htu.begin());
 	}
 
-  sd.exists(sdfilename); // creates file
-  //writeHeader1(sdfile1, sdfilename);
-  //Setup for RTC
+  sd.exists(sdfilename); // creates sd file
+
+  //Setup for RTC and manually changing SD file timing
   rtc.begin();
-  if (rtc.lostPower()) {// Note: comment this line (and end bracket) and change rtc.adjust below to change time manually
+  if (rtc.lostPower()) {    // Note: comment this line (and end bracket) and change rtc.adjust below to change time manually
    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //
-     rtc.adjust(DateTime(2020, 1, 16, 16, 31, 0)); //manually change time here
+     rtc.adjust(DateTime(2020, 1, 19, 22, 43, 0)); //manually change time here (YEAR, MONTH, DAY, HR, MIN, SEC)
   } // this end bracket
 }
 void loop(){
-  
   //check for wifi connection
   if(!WiFi.ready()){
     WiFi.connect();
     Serial.println("Connecting...");
   }
-  WiFiSignal sig = WiFi.RSSI();
-  // Serial.println(sig.getStrength());
+
   //Plantower data collection and processing
   int txdata = Serial1.read();
   if(txdata != -260){
