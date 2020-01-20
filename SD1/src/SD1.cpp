@@ -13,20 +13,22 @@
 #include "HttpClient.h"
 #include "Adafruit_Si7021.h"
 
-//to be able to use without wifi basically the code will still run when wifi is down
 void setup();
 void loop();
-#line 11 "c:/Users/13479/Desktop/PotsdamSensors/Particle/SD1/src/SD1.ino"
-SYSTEM_THREAD(ENABLED);
+#line 10 "c:/Users/13479/Desktop/PotsdamSensors/Particle/SD1/src/SD1.ino"
+SYSTEM_THREAD(ENABLED); //to be able to use without wifi (the code will still run when wifi is down)
 // 1. Set up your wifi: 
 //###########################
-char wifissid[] = "Buffalo-G-87A0";//wifi ssid
-char wifipassword[] = "52672125";//wifi password
+char wifissid[] = "PotsdamSensors";//wifi ssid PotsdamSensors
+char wifipassword[] = "potsdam_sensors";//wifi password potsdam_sensors
 
 // 2. Set up your Device ID: 
 //###########################
-char dbname[20] = "Particle";
-char tablename[20] = "argon1";
+char dbname[20] = "Particle"; //folder in database
+char tablename[20] = "argon3"; //subfolder in database
+
+char sdfilename[20] = "argon3.csv";//always use .csv
+
 //Select sensor/device type
 int sensortype = 1;
 // char server[] = "18.220.67.192"; // Potsdam Sensor server
@@ -50,22 +52,21 @@ char jsondata[1000];
 //mysql information (dbname and tablename above)
 char username[20] = "labusers";
 char password[20] = "labuserspass";
-//Shinyei variables
-int Shinyei = D3;
-unsigned long duration1;
+//Shinyei variables / Sampling variables
+//int Shinyei = D3;
+//unsigned long duration1;
 unsigned long starttime;
 unsigned long sampletime_ms = 5000;
-unsigned long lowpulseoccupancy1 = 0;
+//unsigned long lowpulseoccupancy1 = 0;
 float ratio1 = 0;
 float concentration1 = 0;
 int ratioint;
-//SD card
+//SD card (filename above)
 const uint8_t chipSelect = A5;
 const uint32_t SAMPLE_INTERVAL_MS = 1000;
 int header_done = 0;
 SdFat sd;
 SdFile sdfile1; 
-char sdfilename[20] = "argon18.csv";//always use .csv
 //RTC
 DateTime now;
 RTC_DS3231 rtc;
@@ -82,7 +83,6 @@ struct pms5003data {
   uint16_t pm10_standard, pm25_standard, pm100_standard;
   uint16_t pm10_env, pm25_env, pm100_env;
   uint16_t particles_03um, particles_05um, particles_10um, particles_25um, particles_50um, particles_100um;
-  uint16_t unused;
   uint16_t checksum;
 };
 struct pms5003data data;
@@ -91,27 +91,20 @@ int shiftedtxdata;
 int prevdata1, prevdata2, prevdata3;
 int count = 1; 
 //functions
-void writeHeader1(SdFile file, char fileName[]);
-void logData1(SdFile file, char fileName[]);
-void handler(const char *eventName, const char *data);
-void handler2(const char *eventName, const char *data);
-void Postrequest();
+void writeHeader1(SdFile file, char fileName[]);        //creates header with variables for SD card data
+void logData1(SdFile file, char fileName[]);            //logs data to SD card
 
 void setup(){
   Serial.begin(115200);
   while(!Serial);
   delay(4000); 
-  Serial.println("hello");
-    
-  Serial.println("hello222");
+  Serial.println("Starting up...");
+
   //setting wifi
   WiFi.setCredentials(wifissid, wifipassword, WPA2);//options are WPA2 (default if not chosen), WEP, WPA
   
   //Serial for plantower
   Serial1.begin(9600, SERIAL_8N1);
-
-  //Setup for Shinyei
-  pinMode(Shinyei,INPUT);
   
   //Setup for humidity and temperature sensor
   int count2 = 0;
@@ -123,7 +116,7 @@ void setup(){
 
   sd.exists(sdfilename); // creates sd file
 
-  //Setup for RTC
+  //Setup for RTC and manually changing SD file timing
   rtc.begin();
   if (rtc.lostPower()) {    // Note: comment this line (and end bracket) and change rtc.adjust below to change time manually
    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //
@@ -208,23 +201,17 @@ void loop(){
             writeHeader1(sdfile1, sdfilename);
             header_done=1;  
           }
-          //Shinyei Code
-          duration1 = pulseIn(Shinyei, LOW);
-          lowpulseoccupancy1 = lowpulseoccupancy1+duration1;
+          //Send data to database
           if ((millis()-starttime) > sampletime_ms){
-            ratio1 = (lowpulseoccupancy1/((millis()-starttime)*10.0));
-            lowpulseoccupancy1 = 0;
             snprintf(pathdata, sizeof(pathdata), "/indata01.php?username=%s&password=%s&dbname=%s&tablename=%s&pm10_std=%d&pm25_std=%d&pm100_std=%d&pm10_env=%d&pm25_env=%d&pm100_env=%d&p3=%d&p5=%d&p10=%d&p25=%d&p50=%d&p100=%d&checksum=%d&Temperature=%f&Humidity=%f", username, password, dbname, tablename, data.pm10_standard, data.pm25_standard, data.pm100_standard, data.pm10_env, data.pm25_env, data.pm100_env, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, data.checksum, temp, humd);
-            Serial.println(pathdata);
-            snprintf(jsondata, sizeof(jsondata), "{\"time\": \"%ld\", \"pm10\":\"%d\", \"pm25\":\"%d\", \"pm100\":\"%d\", \"pn03\":\"%d\", \"pn05\":\"%d\", \"pn10\":\"%d\", \"pn25\":\"%d\", \"pn50\":\"%d\", \"pn100\":\"%d\", \"Shinyei\":\"%f\", \"temp\":\"%f\", \"humidity\":\"%f\"}", now.unixtime(), data.pm10_standard, data.pm25_standard, data.pm100_standard, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, ratio1, temp, humd);
-            logData1(sdfile1, sdfilename); 
+            snprintf(jsondata, sizeof(jsondata), "{\"time\": \"%ld\", \"pm10\":\"%d\", \"pm25\":\"%d\", \"pm100\":\"%d\", \"pn03\":\"%d\", \"pn05\":\"%d\", \"pn10\":\"%d\", \"pn25\":\"%d\", \"pn50\":\"%d\", \"pn100\":\"%d\", \"temp\":\"%f\", \"humidity\":\"%f\"}", now.unixtime(), data.pm10_standard, data.pm25_standard, data.pm100_standard, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, temp, humd);
+            logData1(sdfile1, sdfilename); //log data to SD card
 
             request.ip = IPAddress(128, 153, 15, 208);
             request.port = portnum;
             request.path = pathdata;
             http.get(request, response, headers);
             Serial.println("Sending Data");
-            
             starttime = millis();
           }
           Serial1.end();
@@ -260,7 +247,6 @@ void writeHeader1(SdFile file, char fileName[]) {
     file.print(",P50um");
     file.print(",P100um");
     file.print(",checksum");
-    file.print(",Shinyei");
     file.print(",Temperature");
     file.print(",Humidity");
     file.println();
@@ -320,8 +306,6 @@ void logData1(SdFile file, char fileName[]) {
   file.print(data.particles_100um);
   file.print(',');
   file.print(data.checksum);
-  file.print(',');
-  file.print(ratioint);
   file.print(',');
   file.print(templ);
   file.print('.');
