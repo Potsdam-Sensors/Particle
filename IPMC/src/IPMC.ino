@@ -15,8 +15,8 @@ char wifipassword[] = "potsdam_sensors";//wifi password potsdam_sensors
 
 // 2. Set up your Device ID: 
 //###########################
-char dbname[20] = "Particle"; //folder in database
-char tablename[20] = "albany_argon6"; //subfolder in database
+char dbname[20] = "Albany_air_research"; //folder in database
+char tablename[20] = "argon6"; //subfolder in database
 
 char sdfilename[20] = "argon1.csv";//always use .csv
 
@@ -196,7 +196,7 @@ void loop(){
             snprintf(pathdata, sizeof(pathdata), "/indata01.php?unix=%ld&username=%s&password=%s&dbname=%s&tablename=%s&pm10_std=%d&pm25_std=%d&pm100_std=%d&pm10_env=%d&pm25_env=%d&pm100_env=%d&p3=%d&p5=%d&p10=%d&p25=%d&p50=%d&p100=%d&checksum=%d&Temperature=%f&Humidity=%f", now.unixtime(), username, password, dbname, tablename, data.pm10_standard, data.pm25_standard, data.pm100_standard, data.pm10_env, data.pm25_env, data.pm100_env, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, data.checksum, temp, humd);
             snprintf(jsondata, sizeof(jsondata), "{\"time\": \"%ld\", \"pm10\":\"%d\", \"pm25\":\"%d\", \"pm100\":\"%d\", \"pn03\":\"%d\", \"pn05\":\"%d\", \"pn10\":\"%d\", \"pn25\":\"%d\", \"pn50\":\"%d\", \"pn100\":\"%d\", \"temp\":\"%f\", \"humidity\":\"%f\"}", now.unixtime(), data.pm10_standard, data.pm25_standard, data.pm100_standard, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, temp, humd);
             logData1(sdfile1, sdfilename); //log data to SD card
-
+            Serial.println(pathdata);
             request.ip = IPAddress(128, 153, 15, 208);
             request.port = portnum;
             request.path = pathdata;
