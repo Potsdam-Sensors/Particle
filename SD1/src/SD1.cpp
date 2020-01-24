@@ -24,10 +24,10 @@ char wifipassword[] = "potsdam_sensors";//wifi password potsdam_sensors
 
 // 2. Set up your Device ID: 
 //###########################
-char dbname[20] = "Particle"; //folder in database
-char tablename[20] = "argon3"; //subfolder in database
+char dbname[20] = "Albany_air_research"; //folder in database
+char tablename[20] = "argon15"; //subfolder in database
 
-char sdfilename[20] = "argon3.csv";//always use .csv
+char sdfilename[20] = "argon1.csv";//always use .csv
 
 //Select sensor/device type
 int sensortype = 1;
@@ -119,7 +119,7 @@ void setup(){
   rtc.begin();
   if (rtc.lostPower()) {    // Note: comment this line (and end bracket) and change rtc.adjust below to change time manually
    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //
-     rtc.adjust(DateTime(2020, 1, 19, 22, 43, 0)); //manually change time here (YEAR, MONTH, DAY, HR, MIN, SEC)
+     //rtc.adjust(DateTime(2020, 1, 24, 13, 42, 0)); //manually change time here (YEAR, MONTH, DAY, HR, MIN, SEC)
   } // this end bracket
 }
 void loop(){
@@ -202,7 +202,7 @@ void loop(){
           }
           //Send data to database
           if ((millis()-starttime) > sampletime_ms){
-            snprintf(pathdata, sizeof(pathdata), "/indata01.php?username=%s&password=%s&dbname=%s&tablename=%s&pm10_std=%d&pm25_std=%d&pm100_std=%d&pm10_env=%d&pm25_env=%d&pm100_env=%d&p3=%d&p5=%d&p10=%d&p25=%d&p50=%d&p100=%d&checksum=%d&Temperature=%f&Humidity=%f", username, password, dbname, tablename, data.pm10_standard, data.pm25_standard, data.pm100_standard, data.pm10_env, data.pm25_env, data.pm100_env, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, data.checksum, temp, humd);
+            snprintf(pathdata, sizeof(pathdata), "/indata01.php?unix=%ld&username=%s&password=%s&dbname=%s&tablename=%s&pm10_std=%d&pm25_std=%d&pm100_std=%d&pm10_env=%d&pm25_env=%d&pm100_env=%d&p3=%d&p5=%d&p10=%d&p25=%d&p50=%d&p100=%d&checksum=%d&Temperature=%f&Humidity=%f", now.unixtime(), username, password, dbname, tablename, data.pm10_standard, data.pm25_standard, data.pm100_standard, data.pm10_env, data.pm25_env, data.pm100_env, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, data.checksum, temp, humd);
             snprintf(jsondata, sizeof(jsondata), "{\"time\": \"%ld\", \"pm10\":\"%d\", \"pm25\":\"%d\", \"pm100\":\"%d\", \"pn03\":\"%d\", \"pn05\":\"%d\", \"pn10\":\"%d\", \"pn25\":\"%d\", \"pn50\":\"%d\", \"pn100\":\"%d\", \"temp\":\"%f\", \"humidity\":\"%f\"}", now.unixtime(), data.pm10_standard, data.pm25_standard, data.pm100_standard, data.particles_03um, data.particles_05um, data.particles_10um, data.particles_25um, data.particles_50um, data.particles_100um, temp, humd);
             logData1(sdfile1, sdfilename); //log data to SD card
 
